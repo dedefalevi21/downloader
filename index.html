@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>save yxdesu - Pengunduh Video YouTube</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <div class="logo">
+            <span class="dot">▼</span>
+            save <em>yxdesu</em>
+        </div>
+        <div class="top-cta">Gratis · Tanpa batas</div>
+    </header>
+
+    <section class="hero">
+        <div class="badge"><i></i> Pengunduh Video Premium</div>
+        <h1 id="title">Unduh video <span class="g">YouTube</span><br>tanpa watermark</h1>
+        <p class="sub" id="subtitle">Tempel tautan, pilih kualitas, dan simpan video favoritmu dalam hitungan detik.</p>
+
+        <div class="tabs" id="tabs">
+            <div class="tab on" data-name="YouTube" data-platform="youtube" data-color="#ff0033">
+                <span class="ic"><svg viewBox="0 0 24 24"><path d="M23 12s0-3.9-.5-5.8c-.3-1-1.1-1.8-2.1-2.1C18.5 3.6 12 3.6 12 3.6s-6.5 0-8.4.5c-1 .3-1.8 1.1-2.1 2.1C1 8.1 1 12 1 12s0 3.9.5 5.8c.3 1 1.1 1.8 2.1 2.1 1.9.5 8.4.5 8.4.5s6.5 0 8.4-.5c1-.3 1.8-1.1 2.1-2.1.5-1.9.5-5.8.5-5.8zM9.7 15.6V8.4l6.2 3.6-6.2 3.6z"/></svg></span>
+                YouTube
+            </div>
+            <div class="tab" data-name="Facebook" data-platform="facebook" data-color="#1877f2">
+                <span class="ic"><svg viewBox="0 0 24 24"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12z"/></svg></span>
+                Facebook
+            </div>
+            <div class="tab" data-name="TikTok" data-platform="tiktok" data-color="#25f4ee">
+                <span class="ic">♪</span>
+                TikTok
+            </div>
+            <div class="tab" data-name="Twitter" data-platform="twitter" data-color="#1d9bf0">
+                <span class="ic"><svg viewBox="0 0 24 24"><path d="M18.9 2H22l-7 8 8.3 12h-6.5l-5-7-5.8 7H2.8l7.6-8.6L2.4 2h6.6l4.6 6.3L18.9 2zm-1.1 18h1.7L7.5 3.9H5.7L17.8 20z"/></svg></span>
+                Twitter
+            </div>
+        </div>
+
+        <form class="search" id="downloadForm">
+            <div class="field">
+                <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>
+                <input type="text" id="videoUrl" placeholder="Tempel tautan video..." autocomplete="off" required>
+            </div>
+            <button class="btn" type="submit">Unduh</button>
+        </form>
+        <p class="hint">Mendukung YouTube, Facebook, TikTok, Twitter &amp; 1000+ situs lainnya</p>
+    </section>
+
+    <div id="result" class="panel" style="display:none;">
+        <div class="ph">
+            <div class="th">🎬</div>
+            <div>
+                <h3 id="resultTitle">Judul Video</h3>
+                <p id="resultInfo">Info video</p>
+            </div>
+        </div>
+        <div class="st">Video</div>
+        <div id="videoRows"></div>
+        <div class="st">Audio</div>
+        <div id="audioRows"></div>
+    </div>
+
+    <footer>save yxdesu © 2026 · Semua merek dagang milik pemiliknya masing-masing</footer>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('downloadForm');
+    const urlInput = document.getElementById('videoUrl');
+    const result = document.getElementById('result');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultInfo = document.getElementById('resultInfo');
+    const videoRows = document.getElementById('videoRows');
+    const audioRows = document.getElementById('audioRows');
+    const tabs = document.querySelectorAll('.tab');
+    const titleEl = document.getElementById('title');
+    const subtitleEl = document.getElementById('subtitle');
+
+    let currentMode = 'youtube';
+
+    function isValidUrl(value) {
+        try {
+            const u = new URL(value);
+            return u.protocol === 'http:' || u.protocol === 'https:';
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        tabs.forEach(tab => tab.classList.toggle('on', tab.dataset.platform === mode));
+    }
+
+    const platformColors = {
+        'YouTube': '#ff0033',
+        'Facebook': '#1877f2',
+        'TikTok': '#25f4ee',
+        'Twitter': '#1d9bf0'
+    };
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+            setMode(this.dataset.platform);
+            const name = this.dataset.name;
+            const color = platformColors[name] || '#ff0033';
+            const gradient = `linear-gradient(100deg, ${color} 10%, #22d3ee 55%, #f472b6 95%)`;
+            titleEl.innerHTML = `Unduh video <span class="g" style="background:${gradient};-webkit-background-clip:text;background-clip:text;color:transparent">${name}</span><br>tanpa watermark`;
+            urlInput.focus();
+        });
+    });
+
+    function formatSize(bytes) {
+        if (!bytes) return '0 B';
+        const k = 1024, m = 1024 * 1024, g = 1024 * 1024 * 1024;
+        if (bytes < 1024) return bytes + ' B';
+        else if (bytes < m) return (bytes / 1024).toFixed(1) + ' KB';
+        else if (bytes < g) return (bytes / m).toFixed(1) + ' MB';
+        else return (bytes / g).toFixed(1) + ' GB';
+    }
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const url = urlInput.value.trim();
+
+        if (!url) {
+            alert('Masukkan URL video');
+            return;
+        }
+
+        if (!isValidUrl(url)) {
+            alert('URL tidak valid. Pastikan dimulai dengan http:// atau https://');
+            return;
+        }
+
+        result.style.display = 'block';
+        result.innerHTML = `
+            <div style="padding:14px;border-radius:12px;margin-bottom:16px;text-align:center;background:#e3f2fd;border:1px solid #90caf9;color:#1565c0;">
+                Mengambil informasi video...
+            </div>
+        `;
+
+        fetch('/api/info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url })
+        })
+        .then(r => r.json())
+        .then(info => {
+            if (info.error) {
+                alert(info.error);
+                result.style.display = 'none';
+                return;
+            }
+
+            result.innerHTML = `
+                <div class="ph">
+                    <div class="th">🎬</div>
+                    <div>
+                        <h3>${info.title || 'Video'}</h3>
+                        <p>${info.uploader || ''}</p>
+                    </div>
+                </div>
+                <div class="st">Video</div>
+                <div id="videoRows"></div>
+                <div class="st">Audio</div>
+                <div id="audioRows"></div>
+            `;
+
+            const vRows = document.getElementById('videoRows');
+            const aRows = document.getElementById('audioRows');
+
+            const videoHTML = info.videos.map(v => `
+                <div class="r">
+                    <div>
+                        <strong>${v.resolution} · ${v.ext.toUpperCase()}</strong>
+                        <div class="sm">${formatSize(v.filesize)} · ${v.fps ? v.fps + 'fps' : ''}</div>
+                    </div>
+                    <button class="get" data-format="${v.format_id}" data-kind="video">Unduh</button>
+                </div>
+            `).join('');
+
+            const audioHTML = info.audios.map(a => `
+                <div class="r">
+                    <div>
+                        <strong>Audio · ${a.ext.toUpperCase()}</strong>
+                        <div class="sm">${a.tbr ? a.tbr.toFixed(0) + ' kbps' : ''}</div>
+                    </div>
+                    <button class="get a" data-format="${a.format_id}" data-kind="audio">Unduh MP3</button>
+                </div>
+            `).join('');
+
+            vRows.innerHTML = videoHTML || '<p style="padding:14px;color:#8e98b0;text-align:center;">Tidak ada format video.</p>';
+            aRows.innerHTML = audioHTML || '<p style="padding:14px;color:#8e98b0;text-align:center;">Tidak ada format audio.</p>';
+
+            document.querySelectorAll('#result .get').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const formatId = this.dataset.format;
+                    const kind = this.dataset.kind;
+                    const originalText = this.textContent;
+
+                    this.disabled = true;
+                    this.textContent = 'Memproses...';
+
+                    fetch('/api/download', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: url, format_id: formatId, kind: kind })
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        this.disabled = false;
+                        this.textContent = originalText;
+
+                        if (res.error) {
+                            alert(res.error);
+                            return;
+                        }
+
+                        window.location.href = res.direct_url;
+                    })
+                    .catch(() => {
+                        this.disabled = false;
+                        this.textContent = originalText;
+                        alert('Gagal mengunduh. Coba lagi.');
+                    });
+                });
+            });
+        })
+        .catch(() => {
+            alert('Gagal menghubungi server. Pastikan backend berjalan.');
+        });
+    });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/*.py", "use": "@vercel/python" },
+    { "src": "assets/**", "use": "@vercel/static" },
+    { "src": "index.html", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/info", "dest": "/api/info.py" },
+    { "src": "/api/download", "dest": "/api/download.py" },
+    { "src": "/api/health", "dest": "/api/health.py" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/", "dest": "/index.html" }
+  ]
+}

@@ -1,0 +1,34 @@
+# Vercel / serverless
+.vercel
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Downloads (temporary files)
+downloads/
+
+# Claude app data
+.claude/
+
+# Mockups (design drafts)
+mockups/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log

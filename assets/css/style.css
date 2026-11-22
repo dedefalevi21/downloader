@@ -67,29 +67,14 @@ header{
     color:transparent;
 }
 
-/* Top CTA & Trakteer */
+/* Top CTA */
 .top-cta{
-    display: flex;
-    align-items: center;
-    gap: 15px;
     font-size:.82rem;
     color:#9aa4bd;
-}
-
-.btn-trakteer {
-    background: #be1e2d;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 999px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: 0.2s;
-    display: flex;
-    align-items: center;
-}
-
-.btn-trakteer:hover {
-    background: #a31a26;
+    border:1px solid rgba(255,255,255,.12);
+    padding:9px 18px;
+    border-radius:999px;
+    background:rgba(255,255,255,.04);
 }
 
 /* Hero */

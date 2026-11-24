@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             return;
                         }
 
-                        window.location.href = res.direct_url;
+                        window.location.href = '/api/file/' + res.task_id;
                     })
                     .catch(() => {
                         this.disabled = false;

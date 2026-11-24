@@ -156,7 +156,13 @@ def download():
         return jsonify({'error': 'URL tidak valid'}), 400
 
     site = detect_url_from_body(url) if source == 'auto' else source
-    opts = {'quiet': True, 'no_warnings': True, 'noplaylist': True}
+    # Gunakan user-agent browser agar lebih stabil
+    opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'noplaylist': True,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
 
     task_id = secrets.token_hex(8)
     outtmpl = os.path.join(DOWNLOAD_DIR, task_id + '.%(ext)s')

@@ -142,7 +142,13 @@ def download():
 
     body = request.get_json(silent=True) or {}
     url = body.get('url', '').strip()
-    format_id = (body.get('format_id') or 'best').strip()
+    raw_format_id = (body.get('format_id') or 'best').strip()
+    # Hanya gunakan format_id jika berupa angka (format_id valid dari yt-dlp)
+    # Jika tidak (misalnya "DASH video" dari Facebook/Instagram), gunakan 'best'
+    if raw_format_id and re.fullmatch(r'\d+', raw_format_id):
+        format_id = raw_format_id
+    else:
+        format_id = 'best'
     kind = body.get('kind', 'video')
     source = body.get('source', 'auto').strip().lower()  # 'youtube', 'tiktok', 'facebook', 'twitter', 'telegram', 'auto'
 

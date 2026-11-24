@@ -18,10 +18,7 @@ try:
 except ImportError:
     YTDLP_OK = False
 
-URL_RE = re.compile(
-    r'^https?://(?:www\.)?(?:youtube\.com|youtu\.be|tiktok\.com|facebook\.com|twitter\.com|x\.com|t\.me|telegram\.me)/[^\s/$.?#].[^\s]*$',
-    re.IGNORECASE
-)
+URL_RE = re.compile(r'^https?://[^\s/$.?#].[^\s]*$', re.IGNORECASE)
 
 
 def valid_url(url):
@@ -151,97 +148,24 @@ def download():
     outtmpl = os.path.join(DOWNLOAD_DIR, task_id + '.%(ext)s')
 
     try:
-        # Konfigurasi per situs
-        if site == 'tiktok':
-            # TikTok biasanya video satu blok, fokus pada format video
-            if kind == 'audio':
-                opts['format'] = 'bestaudio/best'
-                opts['postprocessors'] = [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }]
+        if kind == 'audio':
+            opts['format'] = 'bestaudio/best'
+            opts['postprocessors'] = [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }]
+        else:
+            if format_id and format_id != 'best':
+                opts['format'] = f'{format_id}+bestaudio/best'
             else:
                 opts['format'] = 'bestvideo+bestaudio/best'
-                opts['merge_output_format'] = 'mp4'
+            opts['merge_output_format'] = 'mp4'
+            opts['postprocessors'] = [{
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': 'mp4',
+            }]
 
-        elif site == 'facebook':
-            # Facebook video butuh perhatian pada format
-            if kind == 'audio':
-                opts['format'] = 'bestaudio/best'
-                opts['postprocessors'] = [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }]
-            else:
-                # Gabungkan video + audio untuk Facebook
-                if format_id == 'best' or format_id == '':
-                    fmt = 'bestvideo+bestaudio/best'
-                else:
-                    fmt = f'{format_id}+bestaudio/best'
-                opts['format'] = fmt
-                opts['merge_output_format'] = 'mp4'
-
-        elif site == 'twitter' or site == 'x':
-            # Twitter/X video format
-            if kind == 'audio':
-                opts['format'] = 'bestaudio/best'
-                opts['postprocessors'] = [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }]
-            else:
-                # Twitter/X butuh format spesifik untuk gabungan
-                if format_id == 'best' or format_id == '':
-                    fmt = 'bestvideo+bestaudio'
-                else:
-                    fmt = f'{format_id}+bestaudio'
-                opts['format'] = fmt
-                opts['merge_output_format'] = 'mp4'
-
-        elif site == 'telegram':
-            # Telegram channel/posts - biasanya butuh format khusus
-            if kind == 'audio':
-                opts['format'] = 'bestaudio/best'
-                opts['postprocessors'] = [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }]
-            else:
-                # Telegram video
-                if format_id == 'best' or format_id == '':
-                    fmt = 'bestvideo+bestaudio/best'
-                else:
-                    fmt = f'{format_id}+bestaudio/best'
-                opts['format'] = fmt
-                opts['merge_output_format'] = 'mp4'
-
-        else:
-            # Default (YouTube dan unknown): strategi lama
-            if kind == 'audio':
-                opts['format'] = format_id if format_id != 'best' else 'bestaudio/best'
-                opts['postprocessors'] = [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }]
-            else:
-                # Selalu gabungkan video dengan audio terbaik
-                if format_id == 'best':
-                    fmt = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]'
-                else:
-                    fmt = f'{format_id}+bestaudio[ext=m4a]'
-                opts['format'] = fmt
-                opts['merge_output_format'] = 'mp4'
-                opts['postprocessors'] = [{
-                    'key': 'FFmpegVideoConvertor',
-                    'preferedformat': 'mp4',
-                }]
-
-        # Semua situs: set format dan opsi dasar
         opts['outtmpl'] = outtmpl
 
         with yt_dlp.YoutubeDL(opts) as ydl:

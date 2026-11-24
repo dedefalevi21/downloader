@@ -77,6 +77,20 @@ header{
     background:rgba(255,255,255,.04);
 }
 
+.top-cta.donate{
+    background:linear-gradient(135deg,#3e46b6,#000957);
+    color:#f8f9ff;
+    border:1px solid transparent;
+    padding:10px 20px;
+    border-radius:12px;
+    font-weight:600;
+    box-shadow:0 4px 12px rgba(249,115,22,0.3);
+}
+.top-cta.donate:hover{
+    transform:translateY(-2px);
+    box-shadow:0 6px 16px rgba(249,115,22,0.4);
+}
+
 /* Hero */
 .hero{
     text-align:center;

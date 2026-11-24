@@ -10,7 +10,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-app = Flask(__name__, static_folder=None)
+app = Flask(__name__, static_folder='assets')
 
 try:
     import yt_dlp
@@ -18,11 +18,40 @@ try:
 except ImportError:
     YTDLP_OK = False
 
-URL_RE = re.compile(r'^https?://[^\s/$.?#].[^\s]*$', re.IGNORECASE)
+URL_RE = re.compile(
+    r'^https?://(?:www\.)?(?:youtube\.com|youtu\.be|tiktok\.com|facebook\.com|twitter\.com|x\.com|t\.me|telegram\.me)/[^\s/$.?#].[^\s]*$',
+    re.IGNORECASE
+)
 
 
 def valid_url(url):
     return bool(url) and bool(URL_RE.match(url)) and len(url) < 2048
+
+
+def detect_site(url):
+    """Deteksi tipe situs dari URL untuk menyesuaikan opsi pengunduhan"""
+    if 'tiktok.com' in url or 't.me' in url:
+        return 'tiktok'
+    elif 'facebook.com' in url or 'fb.watch' in url:
+        return 'facebook'
+    elif 'twitter.com' in url or 'x.com' in url:
+        return 'twitter'
+    elif 'youtube.com' in url or 'youtu.be' in url:
+        return 'youtube'
+    return 'unknown'
+
+
+def detect_url_from_body(url):
+    """Deteksi situs dari URL ketika source tidak dikirim (untuk download endpoint)"""
+    if 'tiktok.com' in url or 't.me' in url:
+        return 'tiktok'
+    elif 'facebook.com' in url or 'fb.watch' in url:
+        return 'facebook'
+    elif 'twitter.com' in url or 'x.com' in url:
+        return 'twitter'
+    elif 'youtube.com' in url or 'youtu.be' in url:
+        return 'youtube'
+    return 'unknown'
 
 
 # ------------------------- static frontend -------------------------
@@ -53,7 +82,16 @@ def info():
     if not valid_url(url):
         return jsonify({'error': 'URL tidak valid'}), 400
 
-    opts = {'quiet': True, 'no_warnings': True, 'noplaylist': True}
+    site = detect_site(url)
+    opts = {'quiet': True, 'no_warnings': True}
+
+    # Set noplaylist berdasarkan tipe situs
+    # Twitter/X dan Facebook kadang punya playlist, YouTube bisa punya playlist
+    if site in ('twitter', 'facebook'):
+        opts['noplaylist'] = True
+    else:
+        opts['noplaylist'] = True  # Default, bisa diubah jika butuh playlist
+
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
             data = ydl.extract_info(url, download=False)
@@ -86,6 +124,7 @@ def info():
             'uploader': data.get('uploader'),
             'videos': videos[:12],
             'audios': audios[:6],
+            'detected_site': site,
         })
     except Exception as e:
         return jsonify({'error': f'Gagal mengambil info video: {e}'}), 500
@@ -100,46 +139,110 @@ def download():
     url = body.get('url', '').strip()
     format_id = (body.get('format_id') or 'best').strip()
     kind = body.get('kind', 'video')
+    source = body.get('source', 'auto').strip().lower()  # 'youtube', 'tiktok', 'facebook', 'twitter', 'telegram', 'auto'
 
     if not valid_url(url):
         return jsonify({'error': 'URL tidak valid'}), 400
+
+    site = detect_url_from_body(url) if source == 'auto' else source
+    opts = {'quiet': True, 'no_warnings': True, 'noplaylist': True}
 
     task_id = secrets.token_hex(8)
     outtmpl = os.path.join(DOWNLOAD_DIR, task_id + '.%(ext)s')
 
     try:
-        if kind == 'audio':
-            opts = {
-                'format': format_id if format_id != 'best' else 'bestaudio/best',
-                'outtmpl': outtmpl,
-                'quiet': True,
-                'no_warnings': True,
-                'noplaylist': True,
-                'postprocessors': [{
+        # Konfigurasi per situs
+        if site == 'tiktok':
+            # TikTok biasanya video satu blok, fokus pada format video
+            if kind == 'audio':
+                opts['format'] = 'bestaudio/best'
+                opts['postprocessors'] = [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
                     'preferredquality': '192',
-                }],
-            }
-        else:
-            # Selalu gabungkan video dengan audio terbaik agar hasil unduhan memiliki suara
-            if format_id == 'best':
-                fmt = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]'
+                }]
             else:
-                fmt = f'{format_id}+bestaudio[ext=m4a]'
+                opts['format'] = 'bestvideo+bestaudio/best'
+                opts['merge_output_format'] = 'mp4'
 
-            opts = {
-                'format': fmt,
-                'outtmpl': outtmpl,
-                'quiet': True,
-                'no_warnings': True,
-                'noplaylist': True,
-                'merge_output_format': 'mp4',
-                'postprocessors': [{
+        elif site == 'facebook':
+            # Facebook video butuh perhatian pada format
+            if kind == 'audio':
+                opts['format'] = 'bestaudio/best'
+                opts['postprocessors'] = [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }]
+            else:
+                # Gabungkan video + audio untuk Facebook
+                if format_id == 'best' or format_id == '':
+                    fmt = 'bestvideo+bestaudio/best'
+                else:
+                    fmt = f'{format_id}+bestaudio/best'
+                opts['format'] = fmt
+                opts['merge_output_format'] = 'mp4'
+
+        elif site == 'twitter' or site == 'x':
+            # Twitter/X video format
+            if kind == 'audio':
+                opts['format'] = 'bestaudio/best'
+                opts['postprocessors'] = [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }]
+            else:
+                # Twitter/X butuh format spesifik untuk gabungan
+                if format_id == 'best' or format_id == '':
+                    fmt = 'bestvideo+bestaudio'
+                else:
+                    fmt = f'{format_id}+bestaudio'
+                opts['format'] = fmt
+                opts['merge_output_format'] = 'mp4'
+
+        elif site == 'telegram':
+            # Telegram channel/posts - biasanya butuh format khusus
+            if kind == 'audio':
+                opts['format'] = 'bestaudio/best'
+                opts['postprocessors'] = [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }]
+            else:
+                # Telegram video
+                if format_id == 'best' or format_id == '':
+                    fmt = 'bestvideo+bestaudio/best'
+                else:
+                    fmt = f'{format_id}+bestaudio/best'
+                opts['format'] = fmt
+                opts['merge_output_format'] = 'mp4'
+
+        else:
+            # Default (YouTube dan unknown): strategi lama
+            if kind == 'audio':
+                opts['format'] = format_id if format_id != 'best' else 'bestaudio/best'
+                opts['postprocessors'] = [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }]
+            else:
+                # Selalu gabungkan video dengan audio terbaik
+                if format_id == 'best':
+                    fmt = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]'
+                else:
+                    fmt = f'{format_id}+bestaudio[ext=m4a]'
+                opts['format'] = fmt
+                opts['merge_output_format'] = 'mp4'
+                opts['postprocessors'] = [{
                     'key': 'FFmpegVideoConvertor',
                     'preferedformat': 'mp4',
-                }],
-            }
+                }]
+
+        # Semua situs: set format dan opsi dasar
+        opts['outtmpl'] = outtmpl
 
         with yt_dlp.YoutubeDL(opts) as ydl:
             meta = ydl.extract_info(url, download=True)
@@ -156,6 +259,7 @@ def download():
             'title': meta.get('title'),
             'ext': os.path.splitext(filename)[1].lstrip('.'),
             'size': os.path.getsize(path),
+            'detected_site': site,
         })
     except Exception as e:
         return jsonify({'error': f'Gagal mengunduh: {e}'}), 500
@@ -184,4 +288,4 @@ def cleanup_old(minutes=60):
 
 if __name__ == '__main__':
     cleanup_old()
-    app.run(host='0.0.0.0', port=8080, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)

@@ -27,8 +27,12 @@ def valid_url(url):
 
 def detect_site(url):
     """Deteksi tipe situs dari URL untuk menyesuaikan opsi pengunduhan"""
-    if 'tiktok.com' in url or 't.me' in url:
+    if 'instagram.com' in url or 'instagr.am' in url:
+        return 'instagram'
+    elif 'tiktok.com' in url:
         return 'tiktok'
+    elif 't.me' in url or 'telegram.me' in url:
+        return 'telegram'
     elif 'facebook.com' in url or 'fb.watch' in url:
         return 'facebook'
     elif 'twitter.com' in url or 'x.com' in url:
@@ -40,8 +44,12 @@ def detect_site(url):
 
 def detect_url_from_body(url):
     """Deteksi situs dari URL ketika source tidak dikirim (untuk download endpoint)"""
-    if 'tiktok.com' in url or 't.me' in url:
+    if 'instagram.com' in url or 'instagr.am' in url:
+        return 'instagram'
+    elif 'tiktok.com' in url:
         return 'tiktok'
+    elif 't.me' in url or 'telegram.me' in url:
+        return 'telegram'
     elif 'facebook.com' in url or 'fb.watch' in url:
         return 'facebook'
     elif 'twitter.com' in url or 'x.com' in url:
@@ -156,10 +164,17 @@ def download():
                 'preferredquality': '192',
             }]
         else:
-            if format_id and format_id != 'best':
-                opts['format'] = f'{format_id}+bestaudio/best'
+            # Strategi pemilihan format yang lebih kompatibel
+            if site in ('facebook', 'instagram', 'twitter', 'x', 'telegram'):
+                # Untuk platform sosial media, biarkan yt-dlp memilih format terbaik yang sudah tergabung
+                opts['format'] = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
             else:
-                opts['format'] = 'bestvideo+bestaudio/best'
+                # Untuk YouTube dan lainnya, coba gunakan format_id jika ada
+                if format_id and format_id != 'best':
+                    opts['format'] = f'{format_id}+bestaudio/best'
+                else:
+                    opts['format'] = 'bestvideo+bestaudio/best'
+
             opts['merge_output_format'] = 'mp4'
             opts['postprocessors'] = [{
                 'key': 'FFmpegVideoConvertor',
